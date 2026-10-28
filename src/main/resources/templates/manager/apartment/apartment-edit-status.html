@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layout/manager/layout_manager :: manager-layout(~{::#main-content}, 'apartments')}"
+      th:with="pageTitle='Chỉnh sửa trạng thái Căn hộ'">
+<head>
+    <title>Chỉnh sửa trạng thái Căn hộ</title>
+</head>
+<body>
+<div id="main-content">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        #main-content { font-family: 'Inter', sans-serif; }
+        
+        .header-actions-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .header-actions-row h5 {
+            margin: 0;
+            color: #6B7280;
+            font-size: 1rem;
+        }
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #E5E7EB;
+        }
+        .form-card h4 {
+            margin: 0 0 16px 0;
+            color: #582BE8;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .status-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .status-option:hover {
+            border-color: #582BE8;
+            background: #f8f9fc;
+        }
+        .status-option:has(input:checked) {
+            border-color: #582BE8;
+            background: #F0EDFE;
+        }
+        .form-check-input {
+            margin-top: 4px;
+            cursor: pointer;
+        }
+        .form-check-label {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            text-transform: uppercase;
+            width: fit-content;
+        }
+        .badge.bg-success {
+            background: #D1FAE5;
+            color: #059669;
+        }
+        .badge.bg-primary {
+            background: #F0EDFE;
+            color: #582BE8;
+        }
+        .badge.bg-warning {
+            background: #FEF3C7;
+            color: #D97706;
+        }
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert-info {
+            background: #EFF6FF;
+            color: #1E40AF;
+            border: 1px solid #BFDBFE;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            gap: 8px;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        .btn-primary {
+            background: #582BE8;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4a22c9;
+        }
+        .btn-secondary {
+            background: #F3F4F6;
+            color: #1E1B4B;
+        }
+        .btn-secondary:hover {
+            background: #E5E7EB;
+        }
+        .flex-end-gap-2 {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .text-muted {
+            color: #6B7280;
+        }
+        .small {
+            font-size: 12px;
+        }
+        .d-block {
+            display: block;
+        }
+        .fw-bold {
+            font-weight: 700;
+        }
+    </style>
+
+    <!-- Page Actions -->
+    <div class="header-actions-row">
+        <h5>Chỉnh sửa Trạng thái</h5>
+        <div>
+            <a th:href="@{/manager/apartments/{id}(id=${apartment.apartmentId})}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <h4>
+            Căn hộ: <span th:text="${apartment.apartmentNumber}"></span>
+        </h4>
+
+        <form th:action="@{/manager/apartments/{id}/update-status(id=${apartment.apartmentId})}" method="post">
+            <div style="margin-bottom: 20px;">
+                <label class="fw-bold" style="display: block; margin-bottom: 8px; font-size: 14px;">Trạng thái Mới</label>
+                <div class="status-option">
+                    <input class="form-check-input" type="radio" name="status" value="0" id="statusAvailable" th:checked="${apartment.status == 0}">
+                    <label class="form-check-label" for="statusAvailable">
+                        <span class="badge bg-success">Trống</span>
+                        <small class="text-muted d-block">Căn hộ sẵn sàng cho cư dân mới dọn vào</small>
+                    </label>
+                </div>
+                <div class="status-option">
+                    <input class="form-check-input" type="radio" name="status" value="1" id="statusOccupied" th:checked="${apartment.status == 1}">
+                    <label class="form-check-label" for="statusOccupied">
+                        <span class="badge bg-primary">Đã ở</span>
+                        <small class="text-muted d-block">Căn hộ hiện đang có cư dân sinh sống</small>
+                    </label>
+                </div>
+                <div class="status-option">
+                    <input class="form-check-input" type="radio" name="status" value="2" id="statusMaintenance" th:checked="${apartment.status == 2}">
+                    <label class="form-check-label" for="statusMaintenance">
+                        <span class="badge bg-warning">Bảo trì</span>
+                        <small class="text-muted d-block">Căn hộ đang được sửa chữa, bảo trì</small>
+                    </label>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <span th:if="${apartment.currentOccupancy > 0}">
+                    Căn hộ này hiện đang có <strong th:text="${apartment.currentOccupancy}"></strong>
+                    cư dân. Chuyển trạng thái sang "Trống" sẽ không xóa thông tin cư dân.
+                </span>
+                <span th:unless="${apartment.currentOccupancy > 0}">
+                    Căn hộ này hiện không có cư dân nào.
+                </span>
+            </div>
+
+            <div class="flex-end-gap-2">
+                <a th:href="@{/manager/apartments/{id}(id=${apartment.apartmentId})}" class="btn btn-secondary">Hủy</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Cập nhật Trạng thái</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

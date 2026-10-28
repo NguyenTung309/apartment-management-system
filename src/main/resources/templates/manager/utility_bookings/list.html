@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/manager/layout_manager :: manager-layout(~{::main}, 'bookings')}" lang="vi">
+<head>
+    <title>Quản lý đặt tiện ích | ABMS Manager</title>
+</head>
+<body>
+
+<main class="ub-page-container">
+
+    <!-- Page-specific CSS (loaded via fragment injection) -->
+    <link rel="stylesheet" th:href="@{/css/manager/utility_bookings/utility_bookings.css}">
+    
+    <style>
+        /* The switch - the box around the slider */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 44px;
+          height: 24px;
+          margin: 0;
+        }
+
+        /* Hide default HTML checkbox */
+        .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        /* The slider */
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          transition: .4s;
+          border-radius: 24px;
+        }
+
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+        }
+
+        input:checked + .slider {
+          background-color: var(--primary-color, #4f46e5);
+        }
+
+        input:checked + .slider:before {
+          transform: translateX(20px);
+        }
+    </style>
+
+    <!-- Hidden state bridge for JavaScript -->
+    <input type="hidden" id="ubTotalPages"  th:value="${totalPages}">
+    <input type="hidden" id="ubCurrentPage" th:value="${currentPage}">
+
+    <div class="ub-page">
+
+        <!-- ── Page Header ──────────────────────────────────────── -->
+        <div class="ub-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2>Quản lý Đặt Tiện ích</h2>
+                <p>Tổng quan và quản lý đặt trước tiện ích của cộng đồng.</p>
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px; background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Duyệt tự động</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autoApproveToggle" th:checked="${autoApproveEnabled}">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <a th:href="@{/manager/utility-bookings/utilities}" style="display: inline-flex; align-items: center; gap: 8px; background: var(--primary-color, #4f46e5); color: white; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); transition: all 0.3s ease;">
+                    <i class="fas fa-plus"></i> Tạo lịch đặt
+                </a>
+            </div>
+        </div>
+
+        <!-- ── Stat Cards ───────────────────────────────────────── -->
+        <div class="ub-stats-grid">
+            <div class="ub-stat-card">
+                <div class="ub-stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                <div class="ub-stat-label">Tổng số đặt trước</div>
+                <div class="ub-stat-value" id="ubStatTotal" th:text="${stats.totalBookings}">0</div>
+                <div class="ub-stat-sub">Tất cả lịch sử</div>
+            </div>
+            <div class="ub-stat-card">
+                <div class="ub-stat-icon"><i class="fas fa-hourglass-half"></i></div>
+                <div class="ub-stat-label">Chờ duyệt</div>
+                <div class="ub-stat-value" id="ubStatPending" th:text="${stats.pendingApprovals}">0</div>
+                <div class="ub-stat-sub">Đang chờ bạn duyệt</div>
+            </div>
+            <div class="ub-stat-card">
+                <div class="ub-stat-icon"><i class="fas fa-calendar-day"></i></div>
+                <div class="ub-stat-label">Lịch trình hôm nay</div>
+                <div class="ub-stat-value" id="ubStatToday" th:text="${stats.todaySchedule}">0</div>
+                <div class="ub-stat-sub">Đang diễn ra &amp; Sắp tới</div>
+            </div>
+        </div>
+
+        <!-- ── Filter Bar ────────────────────────────────────────── -->
+        <form id="ubFilterForm" method="GET" th:action="@{/manager/utility-bookings}" class="ub-filter-bar">
+            <!-- Hidden input for pagination -->
+            <input type="hidden" id="ubFormPage" name="page" th:value="${currentPage}">
+
+            <div class="ub-filter-grid">
+                <!-- Search by resident name -->
+            <div class="ub-search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text"
+                       id="ubSearch"
+                       name="residentName"
+                       class="ub-search-input"
+                       placeholder="Tìm kiếm cư dân..."
+                       th:value="${filter.residentName}">
+            </div>
+
+            <!-- Start Time date picker -->
+            <div class="ub-date-wrap">
+                <button type="button" class="ub-date-btn" id="ubStartTimeBtn" data-for="ubStartTimePicker">
+                    <i class="fas fa-calendar"></i>
+                    <span id="ubStartTimeLabel" data-default="Thời gian bắt đầu">Thời gian bắt đầu</span>
+                    <i class="fas fa-chevron-down" style="font-size:10px"></i>
+                </button>
+                <div class="ub-date-picker" id="ubStartTimePicker">
+                    <div class="ub-date-picker-row">
+                        <div>
+                            <label>Từ</label>
+                            <input type="date" id="ubStartTimeFrom" name="startTimeFrom" th:value="${filter.startTimeFrom}">
+                        </div>
+                        <div>
+                            <label>Đến</label>
+                            <input type="date" id="ubStartTimeTo" name="startTimeTo" th:value="${filter.startTimeTo}">
+                        </div>
+                    </div>
+                    <div class="ub-date-actions">
+                        <button type="button" class="ub-date-cancel">Xóa</button>
+                        <button type="button" class="ub-date-apply">Áp dụng</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Created At date picker -->
+            <div class="ub-date-wrap">
+                <button type="button" class="ub-date-btn" id="ubCreatedAtBtn" data-for="ubCreatedAtPicker">
+                    <i class="fas fa-clock"></i>
+                    <span id="ubCreatedAtLabel" data-default="Thời gian tạo">Thời gian tạo</span>
+                    <i class="fas fa-chevron-down" style="font-size:10px"></i>
+                </button>
+                <div class="ub-date-picker" id="ubCreatedAtPicker">
+                    <div class="ub-date-picker-row">
+                        <div>
+                            <label>Từ</label>
+                            <input type="date" id="ubCreatedAtFrom" name="createdAtFrom" th:value="${filter.createdAtFrom}">
+                        </div>
+                        <div>
+                            <label>Đến</label>
+                            <input type="date" id="ubCreatedAtTo" name="createdAtTo" th:value="${filter.createdAtTo}">
+                        </div>
+                    </div>
+                    <div class="ub-date-actions">
+                        <button type="button" class="ub-date-cancel">Xóa</button>
+                        <button type="button" class="ub-date-apply">Áp dụng</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Status filter -->
+            <select id="ubBookingStatus" name="bookingStatus" class="ub-filter-select">
+                <option value="">Trạng thái đặt: Tất cả</option>
+                <option value="0" th:selected="${filter.bookingStatus != null && filter.bookingStatus == 0}">Chờ duyệt</option>
+                <option value="1" th:selected="${filter.bookingStatus != null && filter.bookingStatus == 1}">Đã duyệt</option>
+                <option value="2" th:selected="${filter.bookingStatus != null && filter.bookingStatus == 2}">Từ chối</option>
+                <option value="3" th:selected="${filter.bookingStatus != null && filter.bookingStatus == 3}">Đã hủy</option>
+            </select>
+
+            <!-- Payment Status filter -->
+            <select id="ubPaymentStatus" name="paymentStatus" class="ub-filter-select">
+                <option value="">Thanh toán: Tất cả</option>
+                <option value="paid"   th:selected="${'paid'.equals(filter.paymentStatus)}">Đã thanh toán</option>
+                <option value="unpaid" th:selected="${'unpaid'.equals(filter.paymentStatus)}">Chưa thanh toán</option>
+            </select>
+
+            <!-- Utility filter -->
+            <select id="ubUtility" name="utilityId" class="ub-filter-select">
+                <option value="">Tiện ích: Tất cả</option>
+                <option th:each="u : ${utilities}"
+                        th:value="${u.utilityId}"
+                        th:text="${u.utilityName}"
+                        th:selected="${filter.utilityId != null && filter.utilityId == u.utilityId}">
+                </option>
+            </select>
+                <!-- Clear Filter Button -->
+                <div style="grid-column: 4;">
+                    <button type="button" id="ubBtnClearFilters" class="ub-btn-clear-filters">
+                        <i class="fas fa-filter-circle-xmark"></i> Xóa bộ lọc
+                    </button>
+                </div>
+            </div><!-- end filter grid -->
+        </form><!-- end filter bar -->
+
+        <!-- ── Table ─────────────────────────────────────────────── -->
+        <div class="ub-table-card">
+            <div class="ub-table-wrap">
+
+                <!-- Loading overlay -->
+                <div class="ub-loading-overlay" id="ubLoading">
+                    <div class="ub-spinner"></div>
+                </div>
+
+                <table class="ub-table">
+                    <thead>
+                        <tr>
+                            <th>Tên cư dân</th>
+                            <th>Thời gian tạo</th>
+                            <th>Tiện ích</th>
+                            <th>Thời gian bắt đầu</th>
+                            <th>Thời lượng</th>
+                            <th>Trạng thái</th>
+                            <th>Thanh toán</th>
+                            <th style="text-align:right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ubTableBody">
+
+                        <!-- Empty state -->
+                        <th:block th:if="${bookings.empty}">
+                            <tr>
+                                <td colspan="8">
+                                    <div class="ub-empty-state">
+                                        <i class="fas fa-calendar-times"></i>
+                                        <p>Không tìm thấy yêu cầu đặt tiện ích nào khớp với bộ lọc.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </th:block>
+
+                        <!-- Table rows (SSR) -->
+                        <th:block th:each="b : ${bookings}">
+                            <tr th:data-id="${b.bookingId}">
+                                <td>
+                                    <div class="ub-resident-cell">
+                                        <div class="ub-avatar" th:text="${b.initials}">??</div>
+                                        <span class="ub-resident-name" th:text="${b.residentName}">—</span>
+                                    </div>
+                                </td>
+                                <td th:text="${b.createdAt}">—</td>
+                                <td><span class="ub-utility-chip" th:text="${b.utilityName}">—</span></td>
+                                <td th:text="${b.startTime}">—</td>
+                                <td th:text="${b.durationHours + ' Giờ'}">—</td>
+                                <td>
+                                    <span th:class="${'ub-status-badge ' + (
+                                          b.bookingStatus == 0 ? 'ub-status-pending' :
+                                          b.bookingStatus == 1 ? 'ub-status-approved' :
+                                          b.bookingStatus == 2 ? 'ub-status-rejected' :
+                                          'ub-status-cancelled')}"
+                                          th:text="${b.bookingStatus == 0 ? 'Chờ duyệt' :
+                                                     b.bookingStatus == 1 ? 'Đã duyệt' :
+                                                     b.bookingStatus == 2 ? 'Từ chối' : 'Đã hủy'}">
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:class="${'ub-payment-pill ' + (b.paymentStatus == 'Paid' ? 'ub-payment-paid' : 'ub-payment-unpaid')}"
+                                          th:text="${b.paymentStatus == 'Paid' ? 'Đã thanh toán' : (b.paymentStatus == 'Unpaid' ? 'Chưa thanh toán' : b.paymentStatus)}">Chưa thanh toán</span>
+                                </td>
+                                <td>
+                                    <div class="ub-actions">
+                                        <!-- Pending: Approve + Reject + View -->
+                                        <th:block th:if="${b.bookingStatus == 0}">
+                                            <button class="ub-btn ub-btn-approve"
+                                                    th:data-action="approve"
+                                                    th:data-id="${b.bookingId}">Duyệt</button>
+                                            <button class="ub-btn ub-btn-reject"
+                                                    th:data-action="reject"
+                                                    th:data-id="${b.bookingId}">Từ chối</button>
+                                        </th:block>
+                                        <!-- Approved or Rejected: Cancel + View -->
+                                        <th:block th:if="${b.bookingStatus == 1 || b.bookingStatus == 2}">
+                                            <button class="ub-btn ub-btn-cancel"
+                                                    th:data-action="cancel"
+                                                    th:data-id="${b.bookingId}">Hủy</button>
+                                        </th:block>
+                                        <!-- All: View -->
+                                        <button class="ub-btn ub-btn-view"
+                                                th:data-action="view"
+                                                th:data-id="${b.bookingId}">Xem</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </th:block>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table footer -->
+            <div class="ub-table-footer">
+                <span id="ubShowingInfo">
+                    Hiển thị <span th:text="${bookings.size()}">0</span> trên
+                    <span th:text="${totalElements}">0</span> đơn đặt
+                </span>
+                <div class="ub-pagination" id="ubPagination" th:if="${totalPages > 1}">
+                    <button type="button" class="ub-page-btn" th:disabled="${currentPage == 0}" th:data-page="${currentPage - 1}">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    
+                    <button type="button" class="ub-page-btn" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                            th:classappend="${currentPage == i ? 'active' : ''}"
+                            th:data-page="${i}"
+                            th:text="${i + 1}"></button>
+
+                    <button type="button" class="ub-page-btn" th:disabled="${currentPage == totalPages - 1}" th:data-page="${currentPage + 1}">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div><!-- end table card -->
+
+    </div><!-- end ub-page -->
+
+    <!-- ── Detail Modal ──────────────────────────────────────────── -->
+    <div class="ub-modal-overlay" id="ubDetailOverlay">
+        <div class="ub-modal ub-detail-modal">
+            <!-- Content injected dynamically by JS -->
+        </div>
+    </div>
+
+    <!-- ── Confirm Modal ─────────────────────────────────────────── -->
+    <div class="ub-modal-overlay" id="ubConfirmOverlay">
+        <div class="ub-modal ub-confirm-modal">
+            <!-- Content injected dynamically by JS -->
+        </div>
+    </div>
+
+    <script th:src="@{/js/manager/utility_bookings/utility_bookings.js}"></script>
+
+</main>
+
+</body>
+</html>

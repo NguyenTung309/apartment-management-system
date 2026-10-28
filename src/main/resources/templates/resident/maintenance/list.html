@@ -1,0 +1,91 @@
+<div th:replace="~{layout/resident/layout_resident :: resident-layout(~{::content}, 'maintenance-requests')}">
+    <div th:fragment="content">
+        <link rel="stylesheet" th:href="@{/css/manager/maintenance/maintenance.css}">
+
+        <div class="page-title-row">
+            <div class="page-title-left">
+                <h2 class="page-title">Yêu cầu Bảo trì của Tôi</h2>
+                <p class="page-subtitle">Xem và theo dõi các yêu cầu bảo trì của bạn.</p>
+            </div>
+            <a th:href="@{/resident/maintenance/create}" class="btn-primary">
+                <i class="fa-solid fa-plus"></i> Yêu cầu Mới
+            </a>
+        </div>
+
+        <form method="get" th:action="@{/resident/maintenance}" class="filter-row">
+            <div>
+                <label class="filter-label">Trạng thái</label>
+                <select name="status" class="status-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="0" th:selected="${selectedStatus == 0}">Chờ xử lý</option>
+                    <option value="1" th:selected="${selectedStatus == 1}">Đang xử lý</option>
+                    <option value="2" th:selected="${selectedStatus == 2}">Đã hoàn thành</option>
+                </select>
+            </div>
+            <div>
+                <label class="filter-label">Từ ngày</label>
+                <input type="date" name="fromDate" class="status-select" th:value="${fromDate}">
+            </div>
+            <div>
+                <label class="filter-label">Đến ngày</label>
+                <input type="date" name="toDate" class="status-select" th:value="${toDate}">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+                <button type="submit" style="background:#4c51bf;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;">Áp dụng</button>
+                <a th:href="@{/resident/maintenance}" style="background:#edf2f7;color:#4a5568;text-decoration:none;padding:8px 16px;border-radius:6px;font-weight:500;font-size:14px;display:inline-flex;align-items:center;">Xóa lọc</a>
+            </div>
+        </form>
+
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mã số</th>
+                            <th>Tiêu đề</th>
+                            <th>Ngày tạo</th>
+                            <th>Trạng thái</th>
+                            <th>Nhân viên</th>
+                            <th>Tiến độ</th>
+                            <th style="text-align:right">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item : ${enrichedRequests}">
+                            <td style="font-family:monospace" th:text="${item.requestId}">1</td>
+                            <td th:text="${item.title}">Water leak</td>
+                            <td style="color:#718096;font-size:13px" th:text="${#temporals.format(item.requestDate, 'dd/MM/yyyy')}">2026-07-01</td>
+                            <td>
+                                <span class="status-badge"
+                                      th:classappend="${item.status == 0 ? ' pending' : item.status == 1 ? ' assigned' : item.status == 2 ? ' completed' : ' pending'}"
+                                      th:text="${item.status == 0 ? 'Chờ xử lý' : item.status == 1 ? 'Đang xử lý' : item.status == 2 ? 'Đã hoàn thành' : 'Không rõ'}">Chờ xử lý</span>
+                            </td>
+                            <td th:text="${item.staffName}">-</td>
+                            <td>
+                                <div th:if="${item.progressPercent > 0}" style="display:flex;flex-direction:column;gap:4px;">
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <div style="flex:1;height:6px;background:#edf2f7;border-radius:3px;min-width:60px;">
+                                            <div th:style="'width:' + ${item.progressPercent} + '%;height:100%;border-radius:3px;background:' + ${item.progressPercent >= 80 ? '#38a169' : item.progressPercent >= 50 ? '#d69e2e' : '#e53e3e'}"></div>
+                                        </div>
+                                        <span style="font-size:12px;color:#718096;font-weight:600;" th:text="${item.progressPercent + '%'}">0%</span>
+                                    </div>
+                                    <span th:if="${item.latestReport != null and item.latestReport != ''}" style="font-size:11px;color:#a0aec0;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" th:text="${item.latestReport}">Report text</span>
+                                </div>
+                                <span th:if="${item.progressPercent == null or item.progressPercent == 0}" style="color:#a0aec0;font-size:12px;">-</span>
+                            </td>
+                            <td style="text-align:right">
+                                <a th:href="@{/resident/maintenance/{id}/detail(id=${item.requestId})}" style="padding:4px 8px;text-decoration:none;color:#4c51bf;">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(enrichedRequests)}">
+                            <td colspan="7" style="text-align:center;padding:40px;color:#718096">Không tìm thấy yêu cầu bảo trì nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>

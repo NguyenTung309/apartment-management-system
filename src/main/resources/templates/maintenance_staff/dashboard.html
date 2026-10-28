@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/maintenance/layout_maintenance :: maintenance-layout(~{::main}, 'dashboard')}">
+<head>
+    <title>Maintenance Dashboard - ABMS</title>
+</head>
+<body>
+
+<main class="dashboard-page">
+    <!-- Welcome Header -->
+    <div class="page-header">
+        <div>
+            <h2 th:text="'Chào mừng trở lại, ' + (${session.currentUser != null && session.currentUser.profile != null} ? ${session.currentUser.profile.fullName} : 'Đối tác bảo trì') + '!'">Chào mừng trở lại!</h2>
+            <p>Đây là tổng quan về khối lượng công việc bảo trì hiện tại và tiến độ của bạn.</p>
+        </div>
+        <div class="current-date">
+            <i class="fa-regular fa-calendar"></i>
+            <span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">16/07/2026</span>
+        </div>
+    </div>
+
+    <!-- Quick Statistics Grid -->
+    <div class="stats-overview-grid">
+        <!-- Assigned Card -->
+        <div class="dashboard-stat-card card-assigned">
+            <div class="card-icon">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <div class="card-details">
+                <h3 th:text="${pendingTasks}">0</h3>
+                <p>Công việc đã giao</p>
+            </div>
+            <a th:href="@{/maintenance_staff/tasks}" class="card-link" title="Xem công việc đã giao">
+                <i class="fa-solid fa-arrow-right-long"></i>
+            </a>
+        </div>
+
+        <!-- In Progress Card -->
+        <div class="dashboard-stat-card card-progress">
+            <div class="card-icon">
+                <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+            </div>
+            <div class="card-details">
+                <h3 th:text="${activeTasks}">0</h3>
+                <p>Đang thực hiện</p>
+            </div>
+            <a th:href="@{/maintenance_staff/tasks}" class="card-link" title="Xem công việc đang thực hiện">
+                <i class="fa-solid fa-arrow-right-long"></i>
+            </a>
+        </div>
+
+        <!-- Completed Card -->
+        <div class="dashboard-stat-card card-completed">
+            <div class="card-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="card-details">
+                <h3 th:text="${completedTasks}">0</h3>
+                <p>Đã hoàn thành</p>
+            </div>
+            <a th:href="@{/maintenance_staff/history}" class="card-link" title="Xem công việc đã hoàn thành">
+                <i class="fa-solid fa-arrow-right-long"></i>
+            </a>
+        </div>
+
+        <!-- Overdue Card -->
+        <div class="dashboard-stat-card card-overdue" th:classappend="${overdueTasks > 0 ? 'alert-danger-card animate-pulse' : ''}">
+            <div class="card-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="card-details">
+                <h3 th:text="${overdueTasks}">0</h3>
+                <p>Công việc trễ hạn</p>
+            </div>
+            <a th:href="@{/maintenance_staff/tasks}" class="card-link" title="Xem công việc">
+                <i class="fa-solid fa-arrow-right-long"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Panels -->
+    <div class="dashboard-grid">
+        <!-- Left Side: Recent Tasks & Completion Gauge -->
+        <div class="dashboard-left-panel">
+            
+            <!-- Completion Gauge & Info Card -->
+            <div class="dashboard-subcard performance-card">
+                <div class="performance-body">
+                    <div class="completion-gauge-container">
+                        <svg class="completion-gauge" viewBox="0 0 36 36">
+                            <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="gauge-progress" th:stroke-dasharray="${completionRate} + ', 100'" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.8" class="gauge-percentage" th:text="${completionRate} + '%'">0%</text>
+                        </svg>
+                    </div>
+                    <div class="performance-details">
+                        <h3>Hiệu suất chung</h3>
+                        <p>Tỷ lệ hoàn thành công việc của bạn được tính dựa trên tổng số công việc được giao.</p>
+                        <div class="performance-stats">
+                            <div>
+                                <span class="num-count" th:text="${completedTasks} + '/' + ${totalTasks}">0/0</span>
+                                <span class="num-lbl">Đã hoàn thành</span>
+                            </div>
+                            <div class="divider"></div>
+                            <div>
+                                <span class="num-count" th:text="${pendingTasks + activeTasks}">0</span>
+                                <span class="num-lbl">Đang hoạt động</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Tasks List -->
+            <div class="dashboard-subcard tasks-list-card">
+                <div class="card-header-row">
+                    <h3>Công việc mới được giao</h3>
+                    <a th:href="@{/maintenance_staff/tasks}" class="view-all-link">Xem tất cả</a>
+                </div>
+                
+                <div th:if="${recentTasks.empty}" class="dashboard-empty-state">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <p>Chưa có công việc nào được giao cho bạn.</p>
+                </div>
+
+                <div class="dashboard-task-list" th:unless="${recentTasks.empty}">
+                    <div th:each="task : ${recentTasks}" class="dashboard-task-item">
+                        <div class="task-status-indicator" th:classappend="${task.status == 1 ? 'indicator-assigned' : (task.status == 2 ? 'indicator-progress' : 'indicator-completed')}"></div>
+                        <div class="task-item-content">
+                            <div class="task-item-title-row">
+                                <h4 th:text="${task.maintenanceRequest.title}">Fix electrical issue</h4>
+                                <span th:if="${task.status == 1}" class="small-badge status-assigned">Đã giao</span>
+                                <span th:if="${task.status == 2}" class="small-badge status-progress">Đang thực hiện</span>
+                                <span th:if="${task.status == 3}" class="small-badge status-completed">Đã hoàn thành</span>
+                            </div>
+                            <div class="task-item-meta">
+                                <span><i class="fa-solid fa-location-dot"></i> <span th:text="${task.maintenanceRequest.apartment.apartmentNumber}">101</span></span>
+                                <span class="meta-separator">•</span>
+                                <span th:if="${task.deadline != null}" th:classappend="${task.status != 3 && task.deadline.isBefore(#temporals.createNow())} ? 'text-overdue' : ''">
+                                    <i class="fa-solid fa-hourglass-half"></i> 
+                                    <span th:text="${#temporals.format(task.deadline, 'dd/MM/yyyy, HH:mm')}">Hạn chót</span>
+                                </span>
+                                <span th:if="${task.deadline == null}"><i class="fa-solid fa-hourglass-half"></i> Không có hạn chót</span>
+                            </div>
+                        </div>
+                        <div class="task-item-actions">
+                            <a th:href="@{'/maintenance_staff/tasks/' + ${task.taskId}}" class="task-action-btn" title="Xem chi tiết và gửi báo cáo">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Side: Recent Activity Timeline -->
+        <div class="dashboard-right-panel">
+            <div class="dashboard-subcard timeline-card">
+                <h3>Hoạt động gần đây</h3>
+                <p class="timeline-subtitle">Các báo cáo tiến độ và cập nhật mới nhất của bạn.</p>
+
+                <div th:if="${recentReports.empty}" class="dashboard-empty-state">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <p>Chưa ghi nhận hoạt động nào. Hãy gửi báo cáo công việc để cập nhật thông tin tại đây.</p>
+                </div>
+
+                <div class="activity-timeline" th:unless="${recentReports.empty}">
+                    <div th:each="report : ${recentReports}" class="timeline-event">
+                        <div class="event-icon">
+                            <i class="fa-solid fa-wrench" th:if="${report.progressPercent < 100}"></i>
+                            <i class="fa-solid fa-check-double" th:if="${report.progressPercent == 100}"></i>
+                        </div>
+                        <div class="event-body">
+                            <div class="event-time" th:text="${#temporals.format(report.createdAt, 'dd/MM/yyyy, HH:mm')}">Date & Time</div>
+                            <div class="event-title">
+                                <a th:href="@{'/maintenance_staff/tasks/' + ${report.maintenanceTask.taskId}}" th:text="${report.maintenanceTask.maintenanceRequest.title}">Task Name</a>
+                            </div>
+                            <div class="event-content" th:text="${report.reportContent}">Report content description...</div>
+                            <div class="event-progress-badge">
+                                <span class="small-badge status-progress" th:text="${report.progressPercent} + '% tiến độ'">50% tiến độ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

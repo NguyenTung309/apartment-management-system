@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layout/manager/layout_manager :: manager-layout(~{::main}, 'profiles')}">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh bạ Hồ sơ</title>
+</head>
+<body>
+
+<main th:fragment="content">
+    <!-- Load custom profile CSS -->
+    <link rel="stylesheet" th:href="@{/css/manager/profiles/list.css}">
+
+    <!-- Directory Header and Cards -->
+    <div class="directory-header-section">
+        <div class="title-area">
+            <h2>Danh bạ Hồ sơ</h2>
+            <p>Xem thông tin và tìm kiếm hồ sơ.</p>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-title">TỔNG SỐ CƯ DÂN</span>
+                    <span class="stat-value" th:text="${totalResidents}">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-title">TỔNG SỐ NHÂN VIÊN BẢO TRÌ</span>
+                    <span class="stat-value" th:text="${totalMaintenance}">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Search Bar Section -->
+    <div class="filters-container">
+        <!-- Tabs -->
+        <div class="tabs-header">
+            <a th:href="@{/manager/profiles(type='resident', search=${search})}" 
+               class="tab-btn" 
+               th:classappend="${type == 'resident' ? 'active' : ''}">
+                Cư dân
+            </a>
+            <a th:href="@{/manager/profiles(type='staff', search=${search})}" 
+               class="tab-btn" 
+               th:classappend="${type == 'staff' ? 'active' : ''}">
+                Nhân viên Bảo trì
+            </a>
+        </div>
+        <!-- Search Box -->
+        <form th:action="@{/manager/profiles}" method="get" class="search-form">
+            <input type="hidden" name="type" th:value="${type}">
+            <div class="search-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" name="search" th:value="${search}" class="search-input" placeholder="Tìm theo Tên hoặc Căn hộ...">
+            </div>
+        </form>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr th:if="${type == 'resident'}">
+                    <th>HỌ VÀ TÊN CƯ DÂN</th>
+                    <th>CĂN HỘ</th>
+                    <th>SỐ ĐIỆN THOẠI</th>
+                    <th>EMAIL</th>
+                    <th>NGÀY DỌN VÀO</th>
+                    <th>TRẠNG THÁI</th>
+                    <th class="text-right">THAO TÁC</th>
+                </tr>
+                <tr th:if="${type == 'staff'}">
+                    <th>HỌ VÀ TÊN NHÂN VIÊN</th>
+                    <th>SỐ ĐIỆN THOẠI</th>
+                    <th>EMAIL</th>
+                    <th>CHUYÊN MÔN / CÔNG VIỆC</th>
+                    <th>TRẠNG THÁI</th>
+                    <th class="text-right">THAO TÁC</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${#lists.isEmpty(profiles)}">
+                    <td colspan="7" class="text-center no-data">Không tìm thấy hồ sơ nào khớp với tiêu chí tìm kiếm.</td>
+                </tr>
+                <tr th:each="p : ${profiles}">
+                    <!-- Name & Avatar Initials -->
+                    <td>
+                        <div class="name-badge-wrapper">
+                            <div class="initials-avatar" th:text="${#strings.substring(p.fullName, 0, 1)}">U</div>
+                            <span class="user-name-text" th:text="${p.fullName}">Full Name</span>
+                        </div>
+                    </td>
+                    
+                    <!-- Conditional columns based on type -->
+                    <td th:if="${type == 'resident'}" th:text="${p.apartmentNumber != null ? 'Căn hộ ' + p.apartmentNumber : 'Chưa gán'}">Apt 101</td>
+                    <td th:text="${p.phoneNumber}">0912345678</td>
+                    <td th:text="${p.email}">email@domain.com</td>
+                    
+                    <!-- Date fields / Specialty fields -->
+                    <td th:if="${type == 'resident'}" th:text="${p.moveInDate != null ? #temporals.format(p.moveInDate, 'dd/MM/yyyy') : 'N/A'}">Oct 12, 2022</td>
+                    <td th:if="${type == 'staff'}" th:text="${p.occupation != null ? p.occupation : 'Bảo trì chung'}">Plumber</td>
+
+                    <!-- Status -->
+                    <td>
+                        <span class="status-badge" 
+                              th:classappend="${p.accountStatus ? 'active' : 'inactive'}"
+                              th:text="${p.accountStatus ? 'Hoạt động' : 'Bị khóa'}">
+                            Active
+                        </span>
+                    </td>
+                    
+                    <!-- Actions -->
+                    <td class="text-right actions-column">
+                        <a th:href="@{'/manager/profiles/' + ${p.accountId}}" class="action-btn-view" title="Xem chi tiết">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="pagination-container" th:if="${totalPages > 1}">
+        <div class="pagination">
+            <a th:href="@{/manager/profiles(type=${type}, search=${search}, page=${currentPage - 1})}" 
+               th:classappend="${currentPage == 0 ? 'disabled' : ''}" 
+               class="page-link">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            
+            <th:block th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:href="@{/manager/profiles(type=${type}, search=${search}, page=${i})}" 
+                   th:text="${i + 1}" 
+                   class="page-link"
+                   th:classappend="${currentPage == i ? 'active' : ''}">
+                    1
+                </a>
+            </th:block>
+            
+            <a th:href="@{/manager/profiles(type=${type}, search=${search}, page=${currentPage + 1})}" 
+               th:classappend="${currentPage >= totalPages - 1 ? 'disabled' : ''}" 
+               class="page-link">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

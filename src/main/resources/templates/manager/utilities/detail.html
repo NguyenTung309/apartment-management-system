@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/manager/layout_manager :: manager-layout(~{::main}, 'service_utility')}" lang="vi">
+<head>
+</head>
+<body>
+
+<main class="utility-container">
+    <link rel="stylesheet" th:href="@{/css/manager/utilities/utilities.css}">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-nav">
+        <a th:href="@{/manager/dashboard}">Trang chủ</a>
+        <i class="fa-solid fa-chevron-right"></i>
+        <a th:href="@{/manager/utilities}">Dịch vụ &amp; Tiện ích</a>
+        <i class="fa-solid fa-chevron-right"></i>
+        <span th:text="${utility.utilityName}">Modern Fitness Center</span>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="detail-header">
+        <div class="header-left">
+            <div class="title-badge-row">
+                <h1 th:text="${utility.utilityName}">Modern Fitness Center</h1>
+                <span th:class="${utility.status} ? 'badge-status active' : 'badge-status maintenance'"
+                      th:text="${utility.status} ? 'Hoạt động' : 'Bảo trì'">Hoạt động</span>
+                <span class="badge-status" th:text="${utility.typeLabel == 'RESERVABLE' ? 'ĐẶT TRƯỚC' : (utility.typeLabel == 'FREE' ? 'MIỄN PHÍ' : utility.typeLabel)}">ĐẶT TRƯỚC</span>
+            </div>
+            <p class="subtitle-text" th:text="${utility.description}">State-of-the-art gym with cardio equipment, weights, and studio space.</p>
+        </div>
+        <div class="header-right">
+            <a th:href="@{/manager/utilities(query=${query}, status=${statusFilter}, page=${currentPage}, pricePage=${currentPricePage}, priceQuery=${priceQuery})}"
+               class="btn-back-list">
+                <i class="fa-solid fa-arrow-left"></i>
+                Quay lại Danh sách
+            </a>
+        </div>
+    </div>
+
+    <!-- Image Gallery (Only 1 main image) -->
+    <div class="gallery-single" style="width: 100%; height: 420px; border-radius: var(--radius-lg, 16px); overflow: hidden; margin-bottom: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);">
+        <img th:src="${utility.imageUrl}" alt="Main Facility View" style="width: 100%; height: 100%; object-fit: cover;">
+    </div>
+
+    <!-- Facility Overview -->
+    <div class="overview-section">
+        <h3>Tổng quan Tiện ích</h3>
+        <p th:text="${utility.description}">
+            State-of-the-art gym with cardio equipment, weights, and studio space.
+        </p>
+        <div class="location-box">
+            <i class="fa-solid fa-location-dot"></i>
+            <span th:text="${utility.location}">Floor 2, Block A</span>
+        </div>
+    </div>
+
+    <!-- Database Entities Info Grid -->
+    <div class="operations-grid detail-operations-grid">
+        <!-- Resources Card (from Database) -->
+        <div class="info-card">
+            <h4>TÀI NGUYÊN THỰC TẾ &amp; VỊ TRÍ</h4>
+            <div class="resources-list">
+                <div class="resource-row" th:each="res : ${utility.utilityResources}">
+                    <div class="resource-meta">
+                        <a th:href="@{/manager/utilities/resources/{id}(id=${res.resourceId}, query=${query}, statusFilter=${statusFilter}, page=${currentPage}, pricePage=${currentPricePage}, priceQuery=${priceQuery})}" class="resource-name" style="color: var(--primary-color); text-decoration: none; font-weight: 700;" th:text="${res.resourceName}">Main Gym Hall</a>
+                        <span class="resource-location"><i class="fa-solid fa-location-dot"></i> <span th:text="${res.location}">Floor 2, Block A</span></span>
+                    </div>
+                    <form th:action="@{/manager/utilities/resources/toggle-status/{id}(id=${res.resourceId}, query=${query}, status=${statusFilter}, page=${currentPage}, pricePage=${currentPricePage}, priceQuery=${priceQuery})}" method="POST" style="display:inline; margin: 0;">
+                        <button type="submit" style="background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;">
+                            <span th:class="${res.status} ? 'badge-status active' : 'badge-status maintenance'" 
+                                  th:text="${res.status} ? 'Sẵn sàng' : 'Bảo trì'" 
+                                  style="font-size: 11px; padding: 4px 8px; transition: all 0.2s ease-in-out; display: inline-block;"
+                                  onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
+                                  onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'"
+                                  th:title="${res.status ? 'Nhấp để chuyển sang Bảo trì' : 'Nhấp để chuyển sang Sẵn sàng'}">Sẵn sàng</span>
+                        </button>
+                    </form>
+                </div>
+                <div th:if="${#lists.isEmpty(utility.utilityResources)}" class="utility-empty-state">
+                    Chưa đăng ký khu vực/tài nguyên thực tế nào cho tiện ích này.
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

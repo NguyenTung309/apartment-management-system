@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác thực OTP | Hệ thống ABM</title>
+    <!-- Style link -->
+    <link rel="stylesheet" th:href="@{/css/auth/login.css}">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+    <main class="login-wrapper">
+        <div class="login-container">
+
+            <!-- Left panel: Branding & Security Info -->
+            <div class="brand-panel" style="justify-content: space-between;">
+                <div>
+                    <div class="brand-title">ABM System</div>
+                    <h1 class="brand-heading">Xác minh bảo mật</h1>
+                    <p class="brand-description" style="margin-bottom: 2rem;">
+                        Vui lòng nhập mã OTP đã được gửi đến email của bạn để tiếp tục quá trình xác thực.
+                        Chúng tôi cam kết bảo vệ sự an toàn của tài khoản cư dân của bạn.
+                    </p>
+                </div>
+
+                <!-- Highlight Card at the bottom left -->
+                <div class="security-card">
+                    <i data-lucide="shield" class="security-card-icon"></i>
+                    <div class="security-card-content">
+                        <div class="security-card-title">Hệ thống bảo mật 2 lớp</div>
+                        <div class="security-card-desc">Mã xác thực này sẽ hết hạn sau 2 phút để đảm bảo an toàn tuyệt đối.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right panel: OTP Inputs -->
+            <div class="form-panel">
+                <div class="form-header">
+                    <h2 class="form-title">Xác thực OTP</h2>
+                    <p class="form-subtitle">Nhập mã 6 chữ số đã gửi đến <strong th:text="${obfuscatedEmail}">le***@gmail.com</strong></p>
+                </div>
+
+                <form id="otpForm" th:action="@{/forgot-password/verify}" method="POST">
+                    
+                    <!-- 6-digit OTP Inputs -->
+                    <div class="otp-container">
+                        <input type="text" class="otp-input" maxlength="1" pattern="\d" required autocomplete="off" inputmode="numeric" />
+                        <input type="text" class="otp-input" maxlength="1" pattern="\d" required autocomplete="off" inputmode="numeric" />
+                        <input type="text" class="otp-input" maxlength="1" pattern="\d" required autocomplete="off" inputmode="numeric" />
+                        <input type="text" class="otp-input" maxlength="1" pattern="\d" required autocomplete="off" inputmode="numeric" />
+                        <input type="text" class="otp-input" maxlength="1" pattern="\d" required autocomplete="off" inputmode="numeric" />
+                        <input type="text" class="otp-input" maxlength="1" pattern="\d" required autocomplete="off" inputmode="numeric" />
+                    </div>
+                    
+                    <!-- Hidden field to combine inputs -->
+                    <input type="hidden" name="otp" id="otp-merged" required />
+
+                    <!-- Countdown Timer -->
+                    <div class="timer-container">
+                        <i data-lucide="clock" class="timer-icon"></i>
+                        <span>Mã hết hạn sau: <strong id="timer-display">02:00</strong></span>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div th:if="${error}" class="alert alert-danger">
+                        <i data-lucide="alert-circle" class="alert-icon"></i>
+                        <span th:text="${error}">Mã xác thực không hợp lệ hoặc đã hết hạn.</span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="btn-verify" class="btn-submit" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <span>Xác nhận</span>
+                        <i data-lucide="check-circle" style="width: 1.1rem; height: 1.1rem;"></i>
+                    </button>
+                </form>
+
+                <!-- Resend code container -->
+                <div class="resend-container">
+                    Không nhận được mã?
+                    <form th:action="@{/forgot-password/resend}" method="POST" style="display: inline;">
+                        <button type="submit" id="btn-resend" class="resend-btn">Gửi lại mã</button>
+                    </form>
+                </div>
+
+                <div class="divider" style="margin-top: 1rem;"></div>
+
+                <!-- Back link -->
+                <div class="back-link-container">
+                    <a th:href="@{/login}" class="back-link">
+                        <i data-lucide="arrow-left" class="back-link-icon"></i>
+                        <span>Quay lại trang đăng nhập</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="login-footer">
+        <a th:href="@{/privacy}" class="footer-link">Chính sách bảo mật</a>
+        <a th:href="@{/terms}" class="footer-link">Điều khoản dịch vụ</a>
+        <a th:href="@{/contact}" class="footer-link">Liên hệ</a>
+    </footer>
+
+    <script th:inline="javascript">
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // OTP inputs auto-focus logic
+        const inputs = document.querySelectorAll('.otp-input');
+        const mergedInput = document.getElementById('otp-merged');
+        const form = document.getElementById('otpForm');
+
+        function updateMerged() {
+            const code = Array.from(inputs).map(inp => inp.value).join('');
+            mergedInput.value = code;
+        }
+
+        // Focus first input on page load
+        if (inputs.length > 0) {
+            inputs[0].focus();
+        }
+
+        // Clear all inputs and reset focus if there's an error from the previous submit
+        /*[# th:if="${error}"]*/
+        inputs.forEach(input => input.value = '');
+        mergedInput.value = '';
+        if (inputs.length > 0) {
+            inputs[0].focus();
+        }
+        /*[/]*/
+
+        inputs.forEach((input, index) => {
+            // Focus next input when input is filled (numeric only)
+            input.addEventListener('input', (e) => {
+                // Instantly remove non-numeric characters
+                input.value = input.value.replace(/\D/g, '');
+                if (input.value && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+                updateMerged();
+            });
+
+            // Focus previous input on backspace
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace') {
+                    if (!input.value && index > 0) {
+                        inputs[index - 1].focus();
+                    } else {
+                        input.value = '';
+                    }
+                    updateMerged();
+                }
+            });
+
+            // Capture clipboard pasting
+            input.addEventListener('paste', (e) => {
+                const data = e.clipboardData.getData('text').trim();
+                if (data.length === 6 && /^\d+$/.test(data)) {
+                    inputs.forEach((inp, idx) => {
+                        inp.value = data[idx];
+                    });
+                    inputs[inputs.length - 1].focus();
+                    updateMerged();
+                }
+                e.preventDefault();
+            });
+        });
+
+        // 2-minute countdown timer logic
+        let secondsLeft = /*[[${remainingSeconds}]]*/ 120;
+        const timerDisplay = document.getElementById('timer-display');
+        const btnVerify = document.getElementById('btn-verify');
+        const btnResend = document.getElementById('btn-resend');
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(secondsLeft / 60);
+            const seconds = secondsLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Run countdown
+        updateTimerDisplay();
+        const intervalId = setInterval(() => {
+            secondsLeft--;
+            if (secondsLeft <= 0) {
+                secondsLeft = 0;
+                clearInterval(intervalId);
+                btnVerify.disabled = true;
+                btnVerify.style.opacity = '0.6';
+                btnVerify.style.cursor = 'not-allowed';
+                timerDisplay.textContent = '00:00';
+            } else {
+                updateTimerDisplay();
+            }
+        }, 1000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,360 @@
+<div th:replace="~{layout/manager/layout_manager :: manager-layout(~{::content}, 'revenue')}">
+
+    <div th:fragment="content">
+
+        <!-- Load custom page styling -->
+
+        <link rel="stylesheet" th:href="@{/css/manager/revenue/revenue.css}">
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+
+       
+        <div th:if="${message != null}" class="toast-msg"
+             th:classappend="${messageType == 'success' ? ' toast-success' : ' toast-error'}"
+             style="padding:12px 20px;border-radius:8px;margin-bottom:16px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;background:${messageType == 'success' ? '#dcfce7' : '#fee2e2'};color:${messageType == 'success' ? '#15803d' : '#b91c1c'};">
+            <i th:class="${messageType == 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-exclamation'}"></i>
+            <span th:text="${message}">Message</span>
+        </div>
+        <div class="rev-page-header">
+
+            <h2 class="rev-page-title">Báo cáo Doanh thu</h2>
+
+                <p class="rev-page-subtitle">Tổng quan tình chính và phân tích hóa đơn cho khu chung cư.</p>
+
+            </div>
+
+        <form method="get" th:action="@{/manager/revenue}" id="revFilterForm" class="rev-filter-bar">
+
+        <input type="hidden" name="month" id="hiddenMonth" th:value="${selectedMonth}">
+
+            <!-- From Date -->
+
+            <div class="rev-filter-group">
+
+                <label class="rev-filter-label">Từ ngày</label>
+
+                <div class="rev-date-wrapper" id="revFromWrapper">
+
+                    <span class="material-symbols-outlined rev-date-icon">calendar_today</span>
+
+                    <input type="text" id="revFromDisplay" class="rev-date-display"
+
+                           th:value="${fromDate != null ? fromDate : ''}"
+
+                           placeholder="Chọn ngày" readonly>
+
+                    <input type="hidden" id="revFromDate" name="fromDate" th:value="${fromDate}">
+
+                </div>
+
+                <div class="rev-calendar-dropdown" id="revFromCal">
+
+                    <div class="cal-header">
+
+                        <button type="button" class="cal-nav" id="revFromPrev">&lt;</button>
+
+                        <span class="cal-month-year" id="revFromMonthYear"></span>
+
+                        <button type="button" class="cal-nav" id="revFromNext">&gt;</button>
+
+                    </div>
+
+                    <div class="cal-weekdays">
+
+                        <span>CN</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span>
+
+                    </div>
+
+                    <div class="cal-days" id="revFromDays"></div>
+
+                    <div class="cal-actions">
+
+                        <button type="button" class="cal-cancel" id="revFromCancel">Hủy</button>
+
+                        <button type="button" class="cal-apply" id="revFromApply">Áp dụng</button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- To Date -->
+
+            <div class="rev-filter-group">
+
+                <label class="rev-filter-label">Đến ngày</label>
+
+                <div class="rev-date-wrapper" id="revToWrapper">
+
+                    <span class="material-symbols-outlined rev-date-icon">calendar_today</span>
+
+                    <input type="text" id="revToDisplay" class="rev-date-display"
+
+                           th:value="${toDate != null ? toDate : ''}"
+
+                           placeholder="Chọn ngày" readonly>
+
+                    <input type="hidden" id="revToDate" name="toDate" th:value="${toDate}">
+
+                </div>
+
+                <div class="rev-calendar-dropdown" id="revToCal">
+
+                    <div class="cal-header">
+
+                        <button type="button" class="cal-nav" id="revToPrev">&lt;</button>
+
+                        <span class="cal-month-year" id="revToMonthYear"></span>
+
+                        <button type="button" class="cal-nav" id="revToNext">&gt;</button>
+
+                    </div>
+
+                    <div class="cal-weekdays">
+
+                        <span>CN</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span>
+
+                    </div>
+
+                    <div class="cal-days" id="revToDays"></div>
+
+                    <div class="cal-actions">
+
+                        <button type="button" class="cal-cancel" id="revToCancel">Hủy</button>
+
+                        <button type="button" class="cal-apply" id="revToApply">Áp dụng</button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+
+
+            <!-- Status -->
+
+            <div class="rev-filter-group">
+
+                <label class="rev-filter-label">Trạng thái</label>
+
+                <select name="status" class="rev-filter-select">
+
+                    <option value="">Tất cả trạng thái</option>
+
+                    <option value="PAID" th:selected="${status == 'PAID'}">Đã thanh toán</option>
+
+                    <option value="PENDING" th:selected="${status == 'PENDING'}">Chờ thanh toán</option>
+
+                    <option value="OVERDUE" th:selected="${status == 'OVERDUE'}">Quá hạn</option>
+
+                    <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">Đã hủy</option>
+
+                </select>
+
+            </div>
+
+
+
+            <div class="rev-filter-actions">
+
+                <button type="submit" class="rev-apply-btn">Áp dụng lọc</button>
+
+                <a th:href="@{/manager/revenue}" class="rev-clear-btn">XÓA BỘ LỌC</a>
+
+            </div>
+
+        </form>
+
+        <div class="rev-stats-grid">
+
+            <!-- Total Revenue -->
+
+            <div class="rev-stat-card">
+
+                <div class="rev-stat-header">
+
+                    <span class="rev-stat-label">TỔNG DOANH THU</span>
+
+                    <div class="rev-stat-icon-wrap primary">
+
+                        <span class="material-symbols-outlined">payments</span>
+
+                    </div>
+
+                </div>
+
+                <div class="rev-stat-main">
+
+                    <span class="rev-stat-number" th:text="${totalRevenue != null ? totalRevenue : '0 VNĐ'}">2,847,500,000 VNĐ</span>
+
+                </div>
+
+            </div>
+
+            <!-- Collected -->
+
+            <div class="rev-stat-card">
+
+                <div class="rev-stat-header">
+
+                    <span class="rev-stat-label">ĐÃ THU</span>
+
+                    <div class="rev-stat-icon-wrap success">
+
+                        <span class="material-symbols-outlined">check_circle</span>
+
+                    </div>
+
+                </div>
+
+                <div class="rev-stat-main">
+
+                    <span class="rev-stat-number success" th:text="${collected != null ? collected : '0 VNĐ'}">2,412,300,000  VNĐ</span>
+
+                </div>
+
+                </div>
+
+            <!-- Outstanding -->
+
+            <div class="rev-stat-card">
+
+                <div class="rev-stat-header">
+
+                    <span class="rev-stat-label">CHƯA THU</span>
+
+                    <div class="rev-stat-icon-wrap warning">
+
+                        <span class="material-symbols-outlined">schedule</span>
+
+                    </div>
+
+                </div>
+
+                <div class="rev-stat-main">
+
+                    <span class="rev-stat-number warning" th:text="${outstanding != null ? outstanding : '0 VNĐ'}">325,200,000  VNĐ</span>
+
+                </div>
+
+                </div>
+
+            <!-- Overdue -->
+
+            <div class="rev-stat-card">
+
+                <div class="rev-stat-header">
+
+                    <span class="rev-stat-label">QUÁ HẠN</span>
+
+                    <div class="rev-stat-icon-wrap error">
+
+                        <span class="material-symbols-outlined">warning</span>
+
+                    </div>
+
+                </div>
+
+                <div class="rev-stat-main">
+
+                    <span class="rev-stat-number error" th:text="${overdue != null ? overdue : '0 VNĐ'}">110,000,000  VNĐ</span>
+
+                </div>
+
+                </div>
+
+        </div>
+
+
+        
+<div class="rev-charts-row">
+<div class="rev-table-card">
+            <div class="rev-table-header-row">
+                <h3 class="rev-table-title">Lịch sử Giao dịch</h3>
+                <span class="rev-table-count" th:text="${totalRecords != null ? totalRecords + ' giao dịch' : '0 giao dịch'}">1,284 records</span>
+            </div>
+
+            <div class="rev-table-wrapper">
+
+                <table class="rev-table">
+                    <thead>
+                        <tr>
+                            <th>MÃ HÓA ĐƠN</th>
+                            <th>CƯ DÂN</th>
+                            <th>CĂN HỘ</th>
+                            <th>SỐ TIỀN</th>
+                            <th>TRẠNG THÁI</th>
+                            <th>HẠN THANH TOÁN</th>
+                            <th>NGÀY THANH TOÁN</th>
+                            <th class="rev-td-center">THAO TÁC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="rev-table-row" th:each="record : ${records}">
+                            <td class="rev-td-mono" th:text="${record.invoiceId}">INV-2026-07-0001</td>
+                            <td>
+                                <div class="rev-resident-cell">
+                                    <div class="rev-avatar" th:text="${record.initials}">U</div>
+                                    <span class="rev-resident-name" th:text="${record.residentName}">Resident Name</span>
+                                </div>
+                            </td>
+                            <td th:text="${record.unitId}">101</td>
+                            <td class="rev-td-amount" th:text="${record.amount}">120,000 VND</td>
+                            <td>
+                                <span class="rev-status-badge" th:classappend="'status-' + ${#strings.toLowerCase(record.status)}" th:text="${record.status == 'PAID' ? 'Đã thanh toán' : (record.status == 'PENDING' ? 'Chờ thanh toán' : (record.status == 'OVERDUE' ? 'Quá hạn' : (record.status == 'CANCELLED' ? 'Đã hủy' : record.status)))}">Đã thanh toán</span>
+                            </td>
+                            <td class="rev-td-secondary rev-td-nowrap" th:text="${record.dueDate != null ? record.dueDate : '—'}">2026-07-01</td>
+                            <td class="rev-td-secondary rev-td-nowrap" th:text="${record.paidDate != null && record.paidDate != '' ? record.paidDate : '—'}">2026-07-02</td>
+                            <td class="rev-td-center">
+                                <a th:href="@{'/manager/revenue/detail/' + ${record.billId}}" class="rev-eye-btn" title="Xem chi tiết">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(records)}">
+                            <td colspan="8" style="text-align: center; padding: 24px; color: var(--color-secondary);">
+                                Không tìm thấy lịch sử giao dịch nào.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="rev-pagination-bar" th:if="${totalPages > 0}">
+                <span class="rev-pagination-info" th:text="'Hiển thị trang ' + (${currentPage} + 1) + ' trên ' + ${totalPages}">Hiển thị trang 1 trên 1</span>
+                <div class="rev-pagination-controls">
+                    <a class="rev-page-btn" th:href="@{/manager/revenue(page=${currentPage - 1}, fromDate=${fromDate}, toDate=${toDate}, status=${status})}"
+                       th:classappend="${currentPage <= 0 ? ' disabled' : ''}">
+                        <span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span>
+                    </a>
+                    <a class="rev-page-btn" th:each="idx : ${#numbers.sequence(0, totalPages - 1)}"
+                       th:href="@{/manager/revenue(page=${idx}, fromDate=${fromDate}, toDate=${toDate}, status=${status})}"
+                       th:classappend="${idx == currentPage ? ' active' : ''}"
+                       th:text="${idx + 1}">1</a>
+                    <a class="rev-page-btn" th:href="@{/manager/revenue(page=${currentPage + 1}, fromDate=${fromDate}, toDate=${toDate}, status=${status})}"
+                       th:classappend="${currentPage >= totalPages - 1 ? ' disabled' : ''}">
+                        <span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script th:src="@{/js/manager/revenue.js}"></script>
+</div>
+</div>
+</div>
+
+
+
+
+
